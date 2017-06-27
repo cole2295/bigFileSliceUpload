@@ -1,0 +1,84 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>大文件</title>
+    <link href="css/Site.css" rel="stylesheet" />
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <h2>大文件</h2>
+        <form class="form-upload">
+            <div class="form-group">
+                <label for="exampleInputFile">分段上传-断点续传</label>
+                <input type="file" id="file1" accept="*">
+                <p class="help-block">
+                    <div class="progress hidden">
+                        <div class="progress-bar progress-bar-success progress-bar-striped"
+                             role="progressbar"
+                             aria-valuenow="0"
+                             aria-valuemin="0"
+                             aria-valuemax="100"
+                             style="vertical-align:central; padding-top:2px;">
+                            <span class="sr-only" style="position:unset;"></span>
+                        </div>
+                    </div>
+                </p>
+            </div>
+            <button type="button" class="btn btn-default" id="upload">开始上传</button>
+            <button type="button" class="btn btn-default" id="uploadstop">暂停上传</button>
+        </form>
+    </div>
+</body>
+</html>
+<script src="js/jquery-1.10.2.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/ajax.1.5.2.js"></script>
+<script>
+    (function () {
+        //上传
+        document.querySelector("#upload").onclick = function () {
+            var progress = $(".progress");
+            var progress_div = progress.children("div");
+            var ratio = 0.00;
+            var allCount = 0;
+
+            progress.removeClass("hidden");
+
+            var temp = ajax.upload_big(
+                "http://localhost:34530/api/values",//文件上传地址
+                "#file1", //input = file 选择器
+                1024 * 1024,//切割文件大小（1M）
+                "*",//文件限制类型 mime类型
+                function (index) {//上传成功事件
+                    if (index == allCount) {
+                        progress_div.css("width", "100%");
+                        progress_div.children("span").text("100%已上传");
+                        progress.addClass("hidden");
+                        progress_div.css("width", "0%");
+                        progress_div.attr("aria-valuenow", 0);
+                        progress_div.attr("aria-valuemax", 100);
+                        progress_div.children("span").text("");
+                    }
+                },
+                function (index, length) {//上传进度事件
+                    allCount = length;
+                    ratio = (index / length) * 100.00 | 0.00;
+                    progress_div.css("width", ratio + "%");
+                    progress_div.attr("aria-valuenow", index);
+                    progress_div.attr("aria-valuemax", length);
+                    progress_div.children("span").text(ratio + "%已上传");
+                },
+                function (index) {//失败处理事件
+                    //alert("上传失败，请重试");
+                    return false;
+                },
+                function (index, length) {//超时处理事件
+                    console.log(index + "/" + length);
+                }
+            )
+            console.log(temp);
+        };
+    })();
+</script>
